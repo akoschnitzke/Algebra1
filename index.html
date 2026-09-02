@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customizable Algebra Emoji Logic Puzzle</title>
+    <title>Algebra 1 Logic Puzzles</title>
     <style>
         :root {
             --bg-color: #f4f7fe;
@@ -33,12 +33,12 @@
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             padding: 30px;
-            max-width: 550px;
+            max-width: 580px;
             width: 100%;
             text-align: center;
         }
 
-        h1, h2 { margin-top: 0; }
+        h1 { margin-top: 0; font-size: 1.8rem; color: var(--primary); }
 
         /* Menu Styles */
         .form-group {
@@ -106,11 +106,11 @@
             border-radius: 12px;
             padding: 12px;
             margin-bottom: 10px;
-            font-size: 1.3rem;
+            font-size: 1.25rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
             border: 2px solid #edf2f7;
         }
 
@@ -155,16 +155,16 @@
 <body>
 
 <div class="game-card">
+    <!-- SETUP MENU SCREEN -->
     <div id="menu-screen">
-        <h1>Puzzle Setup</h1>
-        <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 25px;">Customize the math challenge options below:</p>
+        <h1>Algebra 1 Logic Puzzles</h1>
+        <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 25px;">Customize your puzzle parameters:</p>
 
         <div class="form-group">
-            <label for="num-vars">Number of Variables (Symbols):</label>
+            <label for="num-vars">Total Unique Symbols:</label>
             <select id="num-vars">
-                <option value="2">2 Symbols (Easy)</option>
-                <option value="3" selected>3 Symbols (Medium)</option>
-                <option value="4">4 Symbols (Hard)</option>
+                <option value="3" selected>3 Symbols</option>
+                <option value="4">4 Symbols</option>
             </select>
         </div>
 
@@ -189,9 +189,11 @@
         <button class="btn btn-primary" onclick="startGame()">Start Game 🚀</button>
     </div>
 
+    <!-- GAMEPLAY SCREEN -->
     <div id="game-screen" style="display: none;">
         <div class="header">
             <span class="badge" id="score-display">Score: 0</span>
+            <span style="font-weight: bold; color: var(--primary);">Algebra 1 Logic Puzzles</span>
             <button class="btn btn-secondary" style="width: auto; margin:0; padding: 6px 12px;" onclick="showMenu()">⚙️ Settings</button>
         </div>
 
@@ -211,7 +213,6 @@
 <script>
     const SYMBOLS_POOL = ['🍎', '🍌', '🍇', '🍊', '🍓', '🥑', '🍍', '🍉'];
     
-    // Config state
     let config = {
         numVars: 3,
         ops: ['+'],
@@ -222,7 +223,6 @@
     let currentSolution = 0;
     let currentScore = 0;
     let currentHint = "";
-    let activeVars = [];
 
     function getRandomInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -238,7 +238,6 @@
     }
 
     function startGame() {
-        // Parse settings from Menu
         config.numVars = parseInt(document.getElementById('num-vars').value, 10);
         
         config.ops = ['+'];
@@ -258,7 +257,7 @@
         generatePuzzle();
     }
 
-    function evaluateOp(a, op, b) {
+    function evalOp(a, op, b) {
         switch(op) {
             case '+': return a + b;
             case '-': return a - b;
@@ -278,31 +277,116 @@
         document.getElementById('user-answer').value = '';
         document.getElementById('hint-box').style.display = 'none';
 
-        // Select symbols and assign values
         const shuffled = [...SYMBOLS_POOL].sort(() => 0.5 - Math.random());
-        activeVars = [];
+        let vars = [];
         
         for (let i = 0; i < config.numVars; i++) {
-            let val = getRandomInt(config.minVal, config.maxVal);
-            activeVars.push({ symbol: shuffled[i], value: val });
+            vars.push({ symbol: shuffled[i], value: getRandomInt(config.minVal, config.maxVal) });
         }
 
         let equationsHTML = "";
         let hintSteps = [];
 
-        // Generate line per variable to allow solving one-by-one
-        for (let i = 0; i < config.numVars; i++) {
-            const current = activeVars[i];
+        const v0 = vars[0];
+        const v1 = vars[1];
+        const v2 = vars[2];
+        const v3 = vars[3] || vars[0];
 
-            if (i === 0) {
-                // First variable: A + A = total
-                const total = current.value + current.value;
-                equationsHTML += `<div class="equation-box">${current.symbol} + ${current.symbol} = ${total}</div>`;
-                hintSteps.push(`2 × ${current.symbol} = ${total} → <b>${current.symbol} = ${current.value}</b>`);
-            } else {
-                // Subsequent variables: mix with previous variables
-                const prev = activeVars[i - 1];
-                let op = getRandomElement(config.ops);
-                
-                // Avoid fraction/negative complications for lower levels
-                if (op === '/' && (prev.value % current.value !== 0))
+        // --- CLUE 1 (3 terms: A + A + A = total) ---
+        const clue1Val = v0.value + v0.value + v0.value;
+        equationsHTML += `<div class="equation-box">${v0.symbol} + ${v0.symbol} + ${v0.symbol} = ${clue1Val}</div>`;
+        hintSteps.push(`Clue 1: 3 × ${v0.symbol} = ${clue1Val} → <b>${v0.symbol} = ${v0.value}</b>`);
+
+        // --- CLUE 2 (3 terms: A + B + B = total) ---
+        let op2 = getRandomElement(config.ops);
+        if (op2 === '/' && (v0.value % v1.value !== 0)) op2 = '+';
+        if (op2 === '-' && (v0.value < v1.value)) op2 = '+';
+
+        const clue2Val = evalOp(v0.value, '+', evalOp(v1.value, op2, v1.value));
+        equationsHTML += `<div class="equation-box">${v0.symbol} + ${v1.symbol} ${formatOp(op2)} ${v1.symbol} = ${clue2Val}</div>`;
+        hintSteps.push(`Clue 2: ${v0.value} + (${v1.symbol} ${formatOp(op2)} ${v1.symbol}) = ${clue2Val} → <b>${v1.symbol} = ${v1.value}</b>`);
+
+        // --- CLUE 3 (At least 3 terms: A + B + C = total or A + B + C + D = total) ---
+        let op3 = getRandomElement(config.ops);
+        if (op3 === '/' && (v1.value % v2.value !== 0)) op3 = '+';
+        if (op3 === '-' && (v1.value < v2.value)) op3 = '+';
+
+        let clue3HTML = "";
+        let clue3Val = 0;
+
+        if (config.numVars === 4) {
+            let op4 = getRandomElement(config.ops);
+            if (op4 === '/' && (v2.value % v3.value !== 0)) op4 = '+';
+            if (op4 === '-' && (v2.value < v3.value)) op4 = '+';
+
+            // 4 terms for 4-variable mode
+            clue3Val = v0.value + v1.value + evalOp(v2.value, op4, v3.value);
+            clue3HTML = `${v0.symbol} + ${v1.symbol} + ${v2.symbol} ${formatOp(op4)} ${v3.symbol}`;
+            hintSteps.push(`Clue 3: ${v0.value} + ${v1.value} + (${v2.symbol} ${formatOp(op4)} ${v3.symbol}) = ${clue3Val} → <b>${v2.symbol} = ${v2.value}</b>, <b>${v3.symbol} = ${v3.value}</b>`);
+        } else {
+            // 3 terms for 3-variable mode
+            clue3Val = v0.value + evalOp(v1.value, op3, v2.value);
+            clue3HTML = `${v0.symbol} + ${v1.symbol} ${formatOp(op3)} ${v2.symbol}`;
+            hintSteps.push(`Clue 3: ${v0.value} + (${v1.value} ${formatOp(op3)} ${v2.symbol}) = ${clue3Val} → <b>${v2.symbol} = ${v2.value}</b>`);
+        }
+
+        equationsHTML += `<div class="equation-box">${clue3HTML} = ${clue3Val}</div>`;
+
+        // --- TARGET EQUATION (3 terms) ---
+        let targetOp = config.ops.includes('*') ? '*' : getRandomElement(config.ops);
+        if (targetOp === '/' && (v1.value % v2.value !== 0)) targetOp = '+';
+        if (targetOp === '-' && (v1.value < v2.value)) targetOp = '+';
+
+        currentSolution = v0.value + evalOp(v1.value, targetOp, v2.value);
+        equationsHTML += `<div class="equation-box target-equation">${v0.symbol} + ${v1.symbol} ${formatOp(targetOp)} ${v2.symbol} = ?</div>`;
+
+        currentHint = hintSteps.join('<br>') + `<br><b>Final Answer:</b> ${v0.value} + (${v1.value} ${formatOp(targetOp)} ${v2.value}) = <b>${currentSolution}</b>`;
+
+        document.getElementById('equations-container').innerHTML = equationsHTML;
+    }
+
+    function checkAnswer() {
+        const inputElement = document.getElementById('user-answer');
+        const feedbackElement = document.getElementById('feedback');
+        const userAnswer = parseFloat(inputElement.value);
+
+        if (isNaN(userAnswer)) {
+            feedbackElement.className = "feedback incorrect";
+            feedbackElement.innerText = "Please enter a valid number!";
+            return;
+        }
+
+        if (Math.abs(userAnswer - currentSolution) < 0.01) {
+            feedbackElement.className = "feedback correct";
+            feedbackElement.innerText = "🎉 Correct! Great job!";
+            currentScore += 10;
+            document.getElementById('score-display').innerText = `Score: ${currentScore}`;
+            
+            setTimeout(() => {
+                generatePuzzle();
+            }, 1500);
+        } else {
+            feedbackElement.className = "feedback incorrect";
+            feedbackElement.innerText = "❌ Not quite right. Try again or check the hint!";
+        }
+    }
+
+    function toggleHint() {
+        const hintBox = document.getElementById('hint-box');
+        if (hintBox.style.display === 'none') {
+            hintBox.innerHTML = currentHint;
+            hintBox.style.display = 'block';
+        } else {
+            hintBox.style.display = 'none';
+        }
+    }
+
+    document.getElementById('user-answer').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            checkAnswer();
+        }
+    });
+</script>
+
+</body>
+</html>
