@@ -318,4 +318,130 @@
         let op2_1 = getRandomElement(config.ops);
         let op2_2 = getRandomElement(config.ops);
 
-        if (op2_1 === '/' && (v0.value % v1
+        if (op2_1 === '/' && (v0.value % v1.value !== 0)) op2_1 = '+';
+        if (op2_1 === '-' && (v0.value < v1.value)) op2_1 = '+';
+
+        let clue2Val = 0;
+        let clue2Text = "";
+
+        if (config.useParen) {
+            const innerVal = evalOp(v1.value, op2_2, v1.value);
+            clue2Val = evalOp(v0.value, op2_1, innerVal);
+            clue2Text = `${v0.symbol} ${formatOp(op2_1)} (${v1.symbol} ${formatOp(op2_2)} ${v1.symbol})`;
+            hintSteps.push(`Clue 2: ${v0.value} ${formatOp(op2_1)} (${v1.symbol} ${formatOp(op2_2)} ${v1.symbol}) = ${clue2Val} → <b>${v1.symbol} = ${v1.value}</b>`);
+        } else {
+            const tempVal = evalOp(v1.value, op2_2, v1.value);
+            clue2Val = evalOp(v0.value, op2_1, tempVal);
+            clue2Text = `${v0.symbol} ${formatOp(op2_1)} ${v1.symbol} ${formatOp(op2_2)} ${v1.symbol}`;
+            hintSteps.push(`Clue 2: ${v0.value} ${formatOp(op2_1)} ${v1.symbol} ${formatOp(op2_2)} ${v1.symbol} = ${clue2Val} → <b>${v1.symbol} = ${v1.value}</b>`);
+        }
+        equationsHTML += `<div class="equation-box">${clue2Text} = ${clue2Val}</div>`;
+
+        // --- CLUE 3 (At least 3 variables, up to 5) ---
+        let op3 = getRandomElement(config.ops);
+        if (op3 === '/' && (v1.value % v2.value !== 0)) op3 = '+';
+        if (op3 === '-' && (v1.value < v2.value)) op3 = '+';
+
+        let clue3HTML = "";
+        let clue3Val = 0;
+
+        if (config.numVars === 5) {
+            let op4 = getRandomElement(config.ops);
+            let op5 = getRandomElement(config.ops);
+            clue3Val = v0.value + v1.value + v2.value + v3.value + v4.value;
+            clue3HTML = `${v0.symbol} + ${v1.symbol} + ${v2.symbol} + ${v3.symbol} + ${v4.symbol}`;
+            hintSteps.push(`Clue 3: Sum of symbols = ${clue3Val} → <b>${v2.symbol} = ${v2.value}</b>, <b>${v3.symbol} = ${v3.value}</b>, <b>${v4.symbol} = ${v4.value}</b>`);
+        } else if (config.numVars === 4) {
+            let op4 = getRandomElement(config.ops);
+            if (op4 === '/' && (v2.value % v3.value !== 0)) op4 = '+';
+            if (op4 === '-' && (v2.value < v3.value)) op4 = '+';
+
+            if (config.useParen) {
+                clue3Val = v0.value + evalOp(evalOp(v1.value, op3, v2.value), '+', v3.value);
+                clue3HTML = `${v0.symbol} + (${v1.symbol} ${formatOp(op3)} ${v2.symbol}) + ${v3.symbol}`;
+            } else {
+                clue3Val = v0.value + v1.value + evalOp(v2.value, op4, v3.value);
+                clue3HTML = `${v0.symbol} + ${v1.symbol} + ${v2.symbol} ${formatOp(op4)} ${v3.symbol}`;
+            }
+            hintSteps.push(`Clue 3: ${v0.value} + ${v1.value} + ... = ${clue3Val} → <b>${v2.symbol} = ${v2.value}</b>, <b>${v3.symbol} = ${v3.value}</b>`);
+        } else {
+            if (config.useParen) {
+                clue3Val = evalOp(v0.value, '+', evalOp(v1.value, op3, v2.value));
+                clue3HTML = `${v0.symbol} + (${v1.symbol} ${formatOp(op3)} ${v2.symbol})`;
+            } else {
+                clue3Val = v0.value + evalOp(v1.value, op3, v2.value);
+                clue3HTML = `${v0.symbol} + ${v1.symbol} ${formatOp(op3)} ${v2.symbol}`;
+            }
+            hintSteps.push(`Clue 3: ${v0.value} + (${v1.symbol} ${formatOp(op3)} ${v2.symbol}) = ${clue3Val} → <b>${v2.symbol} = ${v2.value}</b>`);
+        }
+        equationsHTML += `<div class="equation-box">${clue3HTML} = ${clue3Val}</div>`;
+
+        // --- TARGET EQUATION ---
+        let targetOp = config.ops.includes('*') ? '*' : getRandomElement(config.ops);
+        let targetText = "";
+
+        if (config.useExp && Math.random() > 0.5) {
+            const expVal = getRandomElement([2, 3]);
+            currentSolution = Math.pow(v0.value, expVal) + evalOp(v1.value, targetOp, v2.value);
+            targetText = `${v0.symbol}<sup>${expVal}</sup> + ${v1.symbol} ${formatOp(targetOp)} ${v2.symbol} = ?`;
+            currentHint = hintSteps.join('<br>') + `<br><b>Final Calculation:</b> ${v0.value}<sup>${expVal}</sup> + (${v1.value} ${formatOp(targetOp)} ${v2.value}) = <b>${currentSolution}</b>`;
+        } else if (config.useParen) {
+            currentSolution = evalOp(v0.value + v1.value, targetOp, v2.value);
+            targetText = `(${v0.symbol} + ${v1.symbol}) ${formatOp(targetOp)} ${v2.symbol} = ?`;
+            currentHint = hintSteps.join('<br>') + `<br><b>Final Calculation:</b> (${v0.value} + ${v1.value}) ${formatOp(targetOp)} ${v2.symbol} = <b>${currentSolution}</b>`;
+        } else {
+            currentSolution = v0.value + evalOp(v1.value, targetOp, v2.value);
+            targetText = `${v0.symbol} + ${v1.symbol} ${formatOp(targetOp)} ${v2.symbol} = ?`;
+            currentHint = hintSteps.join('<br>') + `<br><b>Final Calculation:</b> ${v0.value} + (${v1.value} ${formatOp(targetOp)} ${v2.value}) = <b>${currentSolution}</b>`;
+        }
+
+        equationsHTML += `<div class="equation-box target-equation">${targetText}</div>`;
+
+        document.getElementById('equations-container').innerHTML = equationsHTML;
+    }
+
+    function checkAnswer() {
+        const inputElement = document.getElementById('user-answer');
+        const feedbackElement = document.getElementById('feedback');
+        const userAnswer = parseFloat(inputElement.value);
+
+        if (isNaN(userAnswer)) {
+            feedbackElement.className = "feedback incorrect";
+            feedbackElement.innerText = "Please enter a valid number!";
+            return;
+        }
+
+        if (Math.abs(userAnswer - currentSolution) < 0.01) {
+            feedbackElement.className = "feedback correct";
+            feedbackElement.innerText = "🎉 Correct! Great job!";
+            currentScore += 10;
+            document.getElementById('score-display').innerText = `Score: ${currentScore}`;
+            
+            setTimeout(() => {
+                generatePuzzle();
+            }, 1500);
+        } else {
+            feedbackElement.className = "feedback incorrect";
+            feedbackElement.innerText = "❌ Not quite right. Try again or check the hint!";
+        }
+    }
+
+    function toggleHint() {
+        const hintBox = document.getElementById('hint-box');
+        if (hintBox.style.display === 'none') {
+            hintBox.innerHTML = currentHint;
+            hintBox.style.display = 'block';
+        } else {
+            hintBox.style.display = 'none';
+        }
+    }
+
+    document.getElementById('user-answer').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            checkAnswer();
+        }
+    });
+</script>
+
+</body>
+</html>
