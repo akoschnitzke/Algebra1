@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Algebra Emoji Logic Puzzle</title>
+    <title>Customizable Algebra Emoji Logic Puzzle</title>
     <style>
         :root {
             --bg-color: #f4f7fe;
             --card-bg: #ffffff;
             --primary: #4361ee;
+            --primary-hover: #3a56d4;
             --success: #2ec4b6;
             --error: #e63946;
             --text: #2b2d42;
@@ -25,6 +25,7 @@
             min-height: 100vh;
             margin: 0;
             padding: 20px;
+            box-sizing: border-box;
         }
 
         .game-card {
@@ -32,11 +33,58 @@
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             padding: 30px;
-            max-width: 500px;
+            max-width: 550px;
             width: 100%;
             text-align: center;
         }
 
+        h1, h2 { margin-top: 0; }
+
+        /* Menu Styles */
+        .form-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        select, input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 1rem;
+            border: 2px solid #cbd5e1;
+            border-radius: 10px;
+            box-sizing: border-box;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: normal;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #edf2f7;
+            cursor: pointer;
+        }
+
+        .range-inputs {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Game Screen Styles */
         .header {
             display: flex;
             justify-content: space-between;
@@ -56,9 +104,9 @@
         .equation-box {
             background: #f8f9fa;
             border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 12px;
-            font-size: 1.4rem;
+            padding: 12px;
+            margin-bottom: 10px;
+            font-size: 1.3rem;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -78,185 +126,183 @@
             margin-top: 20px;
         }
 
-        input[type="number"] {
-            flex: 1;
-            padding: 12px;
-            font-size: 1.2rem;
-            border: 2px solid #cbd5e1;
-            border-radius: 10px;
-            text-align: center;
-            outline: none;
-        }
-
-        input[type="number"]:focus {
-            border-color: var(--primary);
-        }
-
-        button {
+        .btn {
             padding: 12px 24px;
             font-size: 1rem;
             font-weight: bold;
             border: none;
             border-radius: 10px;
             cursor: pointer;
-            transition: transform 0.1s, opacity 0.2s;
+            transition: background-color 0.2s, transform 0.1s;
         }
 
-        button:active {
-            transform: scale(0.98);
-        }
-
-        .btn-submit {
-            background-color: var(--primary);
-            color: white;
-        }
-
-        .btn-hint {
-            background-color: #e2e8f0;
-            color: #475569;
-            margin-top: 10px;
-            width: 100%;
-        }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background-color: var(--primary); color: white; width: 100%; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-submit { background-color: var(--primary); color: white; }
+        .btn-secondary { background-color: #e2e8f0; color: #475569; margin-top: 10px; width: 100%; }
 
         .feedback {
             margin-top: 15px;
             font-weight: bold;
             min-height: 24px;
         }
-
         .feedback.correct { color: var(--success); }
         .feedback.incorrect { color: var(--error); }
-        .hint-text { color: #64748b; font-size: 0.9rem; margin-top: 8px; }
+        .hint-text { color: #64748b; font-size: 0.9rem; margin-top: 8px; text-align: left; background: #f8f9fa; padding: 10px; border-radius: 8px; }
     </style>
 </head>
 <body>
 
 <div class="game-card">
-    <div class="header">
-        <span class="badge" id="score-display">Score: 0</span>
-        <span class="badge" id="level-display">Level 1</span>
+    <div id="menu-screen">
+        <h1>Puzzle Setup</h1>
+        <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 25px;">Customize the math challenge options below:</p>
+
+        <div class="form-group">
+            <label for="num-vars">Number of Variables (Symbols):</label>
+            <select id="num-vars">
+                <option value="2">2 Symbols (Easy)</option>
+                <option value="3" selected>3 Symbols (Medium)</option>
+                <option value="4">4 Symbols (Hard)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Allowed Operations:</label>
+            <div class="checkbox-group">
+                <label class="checkbox-label"><input type="checkbox" id="op-add" checked disabled> Addition (+)</label>
+                <label class="checkbox-label"><input type="checkbox" id="op-sub" checked> Subtraction (-)</label>
+                <label class="checkbox-label"><input type="checkbox" id="op-mul" checked> Multiplication (×)</label>
+                <label class="checkbox-label"><input type="checkbox" id="op-div"> Division (÷)</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Value Range for Symbols:</label>
+            <div class="range-inputs">
+                <input type="number" id="val-min" value="1" min="1" placeholder="Min">
+                <input type="number" id="val-max" value="10" min="2" placeholder="Max">
+            </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="startGame()">Start Game 🚀</button>
     </div>
 
-    <h2>Algebra Logic Puzzle</h2>
-    <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 20px;">
-        Find the numerical value of each symbol to solve the target equation!
-    </p>
+    <div id="game-screen" style="display: none;">
+        <div class="header">
+            <span class="badge" id="score-display">Score: 0</span>
+            <button class="btn btn-secondary" style="width: auto; margin:0; padding: 6px 12px;" onclick="showMenu()">⚙️ Settings</button>
+        </div>
 
-    <div id="equations-container"></div>
+        <div id="equations-container"></div>
 
-    <div class="input-group">
-        <input type="number" id="user-answer" placeholder="?" autocomplete="off">
-        <button class="btn-submit" onclick="checkAnswer()">Submit</button>
+        <div class="input-group">
+            <input type="number" id="user-answer" placeholder="?" autocomplete="off">
+            <button class="btn btn-submit" onclick="checkAnswer()">Submit</button>
+        </div>
+
+        <div class="feedback" id="feedback"></div>
+        <button class="btn btn-secondary" onclick="toggleHint()">💡 Need a Hint?</button>
+        <div class="hint-text" id="hint-box" style="display: none;"></div>
     </div>
-
-    <div class="feedback" id="feedback"></div>
-    <button class="btn-hint" onclick="toggleHint()">💡 Need a Hint?</button>
-    <div class="hint-text" id="hint-box" style="display: none;"></div>
 </div>
 
 <script>
-    const SYMBOLS = ['🍎', '🍌', '🍇', '🍊', '🍓', '🥑'];
+    const SYMBOLS_POOL = ['🍎', '🍌', '🍇', '🍊', '🍓', '🥑', '🍍', '🍉'];
+    
+    // Config state
+    let config = {
+        numVars: 3,
+        ops: ['+'],
+        minVal: 1,
+        maxVal: 10
+    };
+
     let currentSolution = 0;
     let currentScore = 0;
-    let currentLevel = 1;
     let currentHint = "";
+    let activeVars = [];
 
     function getRandomInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
+    function getRandomElement(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function showMenu() {
+        document.getElementById('menu-screen').style.display = 'block';
+        document.getElementById('game-screen').style.display = 'none';
+    }
+
+    function startGame() {
+        // Parse settings from Menu
+        config.numVars = parseInt(document.getElementById('num-vars').value, 10);
+        
+        config.ops = ['+'];
+        if (document.getElementById('op-sub').checked) config.ops.push('-');
+        if (document.getElementById('op-mul').checked) config.ops.push('*');
+        if (document.getElementById('op-div').checked) config.ops.push('/');
+
+        let min = parseInt(document.getElementById('val-min').value, 10) || 1;
+        let max = parseInt(document.getElementById('val-max').value, 10) || 10;
+        if (min >= max) max = min + 5;
+        config.minVal = min;
+        config.maxVal = max;
+
+        document.getElementById('menu-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'block';
+
+        generatePuzzle();
+    }
+
+    function evaluateOp(a, op, b) {
+        switch(op) {
+            case '+': return a + b;
+            case '-': return a - b;
+            case '*': return a * b;
+            case '/': return a / b;
+        }
+    }
+
+    function formatOp(op) {
+        if (op === '*') return '×';
+        if (op === '/') return '÷';
+        return op;
+    }
+
     function generatePuzzle() {
-        // Clear previous state
         document.getElementById('feedback').innerText = '';
         document.getElementById('user-answer').value = '';
         document.getElementById('hint-box').style.display = 'none';
+
+        // Select symbols and assign values
+        const shuffled = [...SYMBOLS_POOL].sort(() => 0.5 - Math.random());
+        activeVars = [];
         
-        // Pick 3 random distinct symbols
-        const shuffled = [...SYMBOLS].sort(() => 0.5 - Math.random());
-        const [A_sym, B_sym, C_sym] = shuffled.slice(0, 3);
-
-        // Assign values to symbols (1 to 10 for accessibility)
-        const A_val = getRandomInt(2, 10);
-        const B_val = getRandomInt(1, 10);
-        const C_val = getRandomInt(1, 10);
-
-        // Generate Row Equations
-        // Row 1: A + A + A = total1
-        const row1_ans = A_val + A_val + A_val;
-        
-        // Row 2: A + B + B = total2
-        const row2_ans = A_val + B_val + B_val;
-
-        // Row 3: B + C = total3
-        const row3_ans = B_val + C_val;
-
-        // Row 4 (Target): C + A * B = ? (Includes Order of Operations)
-        currentSolution = C_val + (A_val * B_val);
-
-        // Store step-by-step hint
-        currentHint = `Step 1: 3 ${A_sym} = ${row1_ans} → ${A_sym} = ${A_val}<br>` +
-                      `Step 2: ${A_val} + 2 ${B_sym} = ${row2_ans} → ${B_sym} = ${B_val}<br>` +
-                      `Step 3: ${B_val} + ${C_sym} = ${row3_ans} → ${C_sym} = ${C_val}<br>` +
-                      `Remember order of operations: ${C_val} + (${A_val} × ${B_val})`;
-
-        // Render equations to DOM
-        const container = document.getElementById('equations-container');
-        container.innerHTML = `
-            <div class="equation-box">${A_sym} + ${A_sym} + ${A_sym} = ${row1_ans}</div>
-            <div class="equation-box">${A_sym} + ${B_sym} + ${B_sym} = ${row2_ans}</div>
-            <div class="equation-box">${B_sym} + ${C_sym} = ${row3_ans}</div>
-            <div class="equation-box target-equation">${C_sym} + ${A_sym} × ${B_sym} = ?</div>
-        `;
-    }
-
-    function checkAnswer() {
-        const inputElement = document.getElementById('user-answer');
-        const feedbackElement = document.getElementById('feedback');
-        const userAnswer = parseInt(inputElement.value, 10);
-
-        if (isNaN(userAnswer)) {
-            feedbackElement.className = "feedback incorrect";
-            feedbackElement.innerText = "Please enter a valid number!";
-            return;
+        for (let i = 0; i < config.numVars; i++) {
+            let val = getRandomInt(config.minVal, config.maxVal);
+            activeVars.push({ symbol: shuffled[i], value: val });
         }
 
-        if (userAnswer === currentSolution) {
-            feedbackElement.className = "feedback correct";
-            feedbackElement.innerText = "🎉 Correct! Great job!";
-            currentScore += 10;
-            currentLevel += 1;
-            document.getElementById('score-display').innerText = `Score: ${currentScore}`;
-            document.getElementById('level-display').innerText = `Level ${currentLevel}`;
-            
-            setTimeout(() => {
-                generatePuzzle();
-            }, 1500);
-        } else {
-            feedbackElement.className = "feedback incorrect";
-            feedbackElement.innerText = "❌ Not quite right. Try again or check the hint!";
-        }
-    }
+        let equationsHTML = "";
+        let hintSteps = [];
 
-    function toggleHint() {
-        const hintBox = document.getElementById('hint-box');
-        if (hintBox.style.display === 'none') {
-            hintBox.innerHTML = currentHint;
-            hintBox.style.display = 'block';
-        } else {
-            hintBox.style.display = 'none';
-        }
-    }
+        // Generate line per variable to allow solving one-by-one
+        for (let i = 0; i < config.numVars; i++) {
+            const current = activeVars[i];
 
-    // Allow "Enter" key submission
-    document.getElementById('user-answer').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            checkAnswer();
-        }
-    });
-
-    // Start game on load
-    generatePuzzle();
-</script>
-
-</body>
-</html>
+            if (i === 0) {
+                // First variable: A + A = total
+                const total = current.value + current.value;
+                equationsHTML += `<div class="equation-box">${current.symbol} + ${current.symbol} = ${total}</div>`;
+                hintSteps.push(`2 × ${current.symbol} = ${total} → <b>${current.symbol} = ${current.value}</b>`);
+            } else {
+                // Subsequent variables: mix with previous variables
+                const prev = activeVars[i - 1];
+                let op = getRandomElement(config.ops);
+                
+                // Avoid fraction/negative complications for lower levels
+                if (op === '/' && (prev.value % current.value !== 0))
