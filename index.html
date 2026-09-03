@@ -161,10 +161,12 @@
         }
 
         .btn:active { transform: scale(0.98); }
+        .btn:disabled { background-color: #cbd5e1; cursor: not-allowed; }
         .btn-primary { background-color: var(--primary); color: white; width: 100%; }
         .btn-primary:hover { background-color: var(--primary-hover); }
         .btn-submit { background-color: var(--primary); color: white; }
         .btn-secondary { background-color: #e2e8f0; color: #475569; margin-top: 10px; width: 100%; }
+        .btn-next { background-color: #2ec4b6; color: white; margin-top: 15px; width: 100%; }
 
         .feedback {
             margin-top: 15px;
@@ -173,6 +175,7 @@
         }
         .feedback.correct { color: var(--success); }
         .feedback.incorrect { color: var(--error); }
+        .feedback.warning { color: #f59e0b; }
         .hint-text { color: #64748b; font-size: 0.9rem; margin-top: 8px; text-align: left; background: #f8f9fa; padding: 10px; border-radius: 8px; }
     </style>
 </head>
@@ -235,11 +238,14 @@
 
         <div class="input-group">
             <input type="number" id="user-answer" placeholder="?" autocomplete="off">
-            <button class="btn btn-submit" onclick="checkAnswer()">Submit</button>
+            <button class="btn btn-submit" id="submit-btn" onclick="checkAnswer()">Submit</button>
         </div>
 
         <div class="feedback" id="feedback"></div>
-        <button class="btn btn-secondary" onclick="toggleHint()">💡 Need a Hint?</button>
+        
+        <button class="btn btn-secondary" id="hint-btn" onclick="revealHint()">💡 Need a Hint? (Forfeits Points)</button>
+        <button class="btn btn-next" id="next-btn" style="display: none;" onclick="generatePuzzle()">Next Puzzle ➔</button>
+        
         <div class="hint-text" id="hint-box" style="display: none;"></div>
     </div>
 </div>
@@ -260,9 +266,10 @@
     let currentSolution = 0;
     let currentScore = 0;
     let currentHint = "";
+    let isHintUsed = false;
 
     function calculatePointValue() {
-        let points = 50; // Base score for addition
+        let points = 50;
 
         const sub = document.getElementById('op-sub').checked;
         const mul = document.getElementById('op-mul').checked;
@@ -271,14 +278,12 @@
         const exp = document.getElementById('op-exp').checked;
         const numVars = parseInt(document.getElementById('num-vars').value, 10);
 
-        // Add bonus points for checked features
         if (sub) points += 25;
         if (mul) points += 25;
         if (div) points += 50;
         if (paren) points += 40;
         if (exp) points += 60;
 
-        // Multiplier bonus for total symbols selected
         points += (numVars - 2) * 50;
 
         return points;
@@ -345,9 +350,20 @@
     }
 
     function generatePuzzle() {
+        isHintUsed = false;
+        
+        // Reset Inputs & Buttons
+        const userInput = document.getElementById('user-answer');
+        userInput.value = '';
+        userInput.disabled = false;
+        document.getElementById('submit-btn').disabled = false;
+        
         document.getElementById('feedback').innerText = '';
-        document.getElementById('user-answer').value = '';
+        document.getElementById('feedback').className = 'feedback';
+        
         document.getElementById('hint-box').style.display = 'none';
+        document.getElementById('hint-btn').style.display = 'block';
+        document.getElementById('next-btn').style.display = 'none';
 
         const shuffled = [...SYMBOLS_POOL].sort(() => 0.5 - Math.random());
         let vars = [];
@@ -465,6 +481,8 @@
     }
 
     function checkAnswer() {
+        if (isHintUsed) return;
+
         const inputElement = document.getElementById('user-answer');
         const feedbackElement = document.getElementById('feedback');
         const userAnswer = parseFloat(inputElement.value);
@@ -490,23 +508,32 @@
         }
     }
 
-    function toggleHint() {
+    function revealHint() {
+        isHintUsed = true;
+        
+        // Disable answer input and submit button
+        document.getElementById('user-answer').disabled = true;
+        document.getElementById('submit-btn').disabled = true;
+        
+        // Show hint text and Swap Hint button for Next Puzzle button
         const hintBox = document.getElementById('hint-box');
-        if (hintBox.style.display === 'none') {
-            hintBox.innerHTML = currentHint;
-            hintBox.style.display = 'block';
-        } else {
-            hintBox.style.display = 'none';
-        }
+        hintBox.innerHTML = currentHint;
+        hintBox.style.display = 'block';
+
+        const feedbackElement = document.getElementById('feedback');
+        feedbackElement.className = "feedback warning";
+        feedbackElement.innerText = "💡 Hint revealed! Points forfeited for this round.";
+
+        document.getElementById('hint-btn').style.display = 'none';
+        document.getElementById('next-btn').style.display = 'block';
     }
 
     document.getElementById('user-answer').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' && !isHintUsed) {
             checkAnswer();
         }
     });
 
-    // Initialize point preview on load
     updatePointValue();
 </script>
 
